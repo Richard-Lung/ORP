@@ -1,5 +1,5 @@
-# AION
-Artificial Intelligence Offroad Navigator is an AI based web app designed to construct uncharted offroad paths based on path finding algorithms.
+# ORP
+OffRoad Pathfinder is an AI based web app designed to construct uncharted offroad paths based on path finding algorithms.
 Purpose:
 AION is a web-based application that leverages AI to assist users in navigating off-road terrains effectively. By analyzing detailed topographical data and integrating real-time environmental factors, the app generates optimal routes from known roads to remote destinations, such as a newly discovered volcano with unique research value but no accessible pathways. This solution is tailored for professionals like researchers, explorers, and emergency responders who require reliable guidance through uncharted territories. The AI system adapts dynamically to user needs, terrain challenges, and environmental conditions, ensuring safe and efficient navigation in remote areas.
 
