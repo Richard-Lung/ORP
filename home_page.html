@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORP - Home</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="home-container">
+        <!-- Top navigation bar -->
+        <div class="top-nav">
+            <div class="menu-icon">
+                <i class="fas fa-bars" id="menuIcon"></i>
+            </div>
+            <div class="nav-logo">
+                <img src="images/ORP website logo.png" alt="ORP logo" class="nav-logo-img" id="logo">
+                <h2 class="nav-title">ORP</h2>
+            </div>
+            <div class="user-controls">
+                <i class="fas fa-user" id="userIcon"></i>
+                <i class="fas fa-cog" id="settingsIcon"></i>
+            </div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="main-content">
+            <!-- Left section - Recent routes -->
+            <div class="content-left">
+                <div class="section-container">
+                    <h2 class="section-title">Your Recent Routes</h2>
+                    <div class="routes-container">
+                        <div class="empty-state" id="emptyState">
+                            <p>You haven't created any routes yet.</p>
+                        </div>
+                        
+                        <div class="routes-list" id="routesList">
+                            <div class="route-card sample-card">
+                                <div class="route-image"></div>
+                                <div class="route-info">
+                                    <h3>Mountain Trail</h3>
+                                    <p>Created: March 25, 2025</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vertical-divider"></div>
+            
+            <div class="content-right">
+                <div class="adventure-prompt">
+                    <h2>Create your next perfect adventure . . .</h2>
+                    <button class="button create-route-button" id="createRouteBtn">Start New Route</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="functions.js"></script>
+</body>
+</html>

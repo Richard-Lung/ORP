@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORP - Create Route</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+</head>
+<body>
+    <div class="home-container">
+        <div class="top-nav">
+            <div class="menu-icon">
+                <i class="fas fa-bars" id="menuIcon"></i>
+            </div>
+            <div class="nav-logo">
+                <img src="images/ORP website logo.png" alt="ORP logo" class="nav-logo-img" id="logo">
+                <h2 class="nav-title">ORP</h2>
+            </div>
+            <div class="user-controls">
+                <i class="fas fa-user" id="userIcon"></i>
+                <i class="fas fa-cog" id="settingsIcon"></i>
+            </div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="main-content">
+            <!-- Left section - Route Input -->
+            <div class="content-left">
+                <div class="section-container">
+                    <h2 class="section-title">Create Your Route</h2>
+                    <div class="route-form">
+                        <div class="input-group">
+                            <label for="startPoint">Start Point</label>
+                            <input type="text" id="startPoint" placeholder="Enter coordinates or address" class="route-input">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="endPoint">End Point</label>
+                            <input type="text" id="endPoint" placeholder="Enter coordinates or address" class="route-input">
+                        </div>
+                        
+                        <button class="button generate-route-button" id="generateRouteBtn">Generate Route</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vertical-divider"></div>
+            
+            <div class="content-right">
+                <div class="map-container" id="map">
+                    <!-- Google Maps will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Route Details Popup -->
+    <div class="popup-overlay" id="routePopup">
+        <div class="popup-container">
+            <div class="popup-close" id="closePopup">
+                <i class="fas fa-times"></i>
+            </div>
+            <div class="popup-content">
+                <div class="popup-left">
+                    <div class="route-map-image" id="routeMapImage">
+                        <!-- Map screenshot will be placed here -->
+                    </div>
+                </div>
+                <div class="popup-right">
+                    <div class="route-details">
+                        <div class="detail-item">
+                            <label>Route Name:</label>
+                            <input type="text" id="routeName" placeholder="Enter route name" class="route-input">
+                        </div>
+                        <div class="detail-item">
+                            <label>Total Distance:</label>
+                            <p id="totalDistance">-- KM</p>
+                        </div>
+                        <div class="detail-item">
+                            <label>Sharpest Inclination:</label>
+                            <p id="sharpestInclination">--%</p>
+                        </div>
+                        <div class="detail-item">
+                            <label>Lowest Inclination:</label>
+                            <p id="lowestInclination">--%</p>
+                        </div>
+                        <div class="detail-item">
+                            <label>Elevation Gain:</label>
+                            <p id="elevationGain">±-- meters</p>
+                        </div>
+                    </div>
+                    <button class="button save-route-button" id="saveRouteBtn">Save Route</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="functions.js"></script>
+</body>
+</html>
