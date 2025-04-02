@@ -1,9 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Check which page we're on based on HTML elements
     const isLandingPage = document.getElementById('loginBtn') && document.getElementById('guestBtn');
     const isLoginPage = document.getElementById('loginSubmitBtn') && document.getElementById('signupBtn');
     const isHomePage = document.getElementById('menuIcon') && document.getElementById('createRouteBtn');
     const isRouteCreationPage = document.getElementById('menuIcon') && document.getElementById('generateRouteBtn');
     
+    // Get references to common HTML elements
     const logo = document.getElementById('logo');
     
     // Initialize landing page functionality
@@ -42,7 +44,10 @@ document.addEventListener('DOMContentLoaded', function() {
         guestBtn.addEventListener('click', function() {
             // For now, also redirect to the login page
             console.log('Continue as Guest button clicked');
-            window.location.href = 'login_signin.html';    
+            window.location.href = 'login_signin.html';
+            
+            // In a real implementation, you might skip the login step
+            // or implement a special guest authentication flow
         });
         
         console.log('ORP Landing Page initialized');
@@ -78,12 +83,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // For mockup purposes, we'll just alert
             console.log('Sign up button clicked');
             alert('Sign up functionality will be implemented later');
+            
+            // In a real implementation, you might redirect to a registration page
+            // or show a registration form
         });
         
         // Forgot password button click event
         forgotPasswordBtn.addEventListener('click', function() {
             console.log('Forgot password clicked');
             alert('Password reset functionality will be implemented later');
+            
+            // In a real implementation, you would handle password reset here
         });
         
         console.log('ORP Login Page initialized');
@@ -123,6 +133,20 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
+        // Show sample route for demonstration (optional)
+        // Uncomment the following to show a sample route
+        /*
+        const sampleCards = document.querySelectorAll('.sample-card');
+        sampleCards.forEach(card => {
+            card.style.display = 'block';
+        });
+        
+        // Hide the empty state if showing sample cards
+        if (emptyState && sampleCards.length > 0) {
+            emptyState.style.display = 'none';
+        }
+        */
+        
         console.log('ORP User Home Page initialized');
     }
     
@@ -151,6 +175,15 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Settings functionality will be implemented later');
         });
         
+        // Update the map when inputs change
+        startPointInput.addEventListener('change', function() {
+            updateMapIframe();
+        });
+        
+        endPointInput.addEventListener('change', function() {
+            updateMapIframe();
+        });
+        
         // Generate Route button functionality
         if (generateRouteBtn) {
             generateRouteBtn.addEventListener('click', function() {
@@ -172,6 +205,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Display the route popup with the mock data
                 showRoutePopup(mockRouteData);
                 
+                // In a real implementation, you would call a routing API
+                // and display the results on the map
             });
         }
         
@@ -205,9 +240,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
+                // In a real implementation, you would save the route to a database
                 console.log('Saving route:', routeName);
                 alert(`Route "${routeName}" saved successfully!`);
                 
+                // Hide the popup
                 hideRoutePopup();
                 
                 // Redirect to the home page
@@ -215,10 +252,65 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Initialize Google Maps
+        // Initialize map iframe
         initMap();
         
         console.log('ORP Route Creation Page initialized');
+    }
+    
+    // Initialize Google Maps (for iframe approach)
+    function initMap() {
+        // No need to initialize the map with JavaScript API when using iframes
+        console.log('Google Maps iframe embedded');
+    }
+    
+    // Function to update the map iframe based on input values
+    function updateMapIframe() {
+        const startPoint = document.getElementById('startPoint').value.trim();
+        const endPoint = document.getElementById('endPoint').value.trim();
+        
+        const mapContainer = document.getElementById('map');
+        
+        if (startPoint && endPoint) {
+            // If both points are set, show directions
+            mapContainer.innerHTML = `
+                <iframe
+                    width="100%"
+                    height="100%"
+                    frameborder="0" 
+                    style="border:0"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    src="https://www.google.com/maps/embed/v1/directions?key=AIzaSyAKMC2UjlDZ9IkVgcDjksVonsN1HO7vyps&origin=${encodeURIComponent(startPoint)}&destination=${encodeURIComponent(endPoint)}&mode=walking"
+                    allowfullscreen>
+                </iframe>
+            `;
+        } else if (startPoint) {
+            // If only start point is set, center on it
+            mapContainer.innerHTML = `
+                <iframe
+                    width="100%"
+                    height="100%"
+                    frameborder="0" 
+                    style="border:0"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    src="https://www.google.com/maps/embed/v1/place?key=AIzaSyAKMC2UjlDZ9IkVgcDjksVonsN1HO7vyps&q=${encodeURIComponent(startPoint)}"
+                    allowfullscreen>
+                </iframe>
+            `;
+        } else {
+            // Default view
+            mapContainer.innerHTML = `
+                <iframe
+                    width="100%"
+                    height="100%"
+                    frameborder="0" 
+                    style="border:0"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    src="https://www.google.com/maps/embed/v1/view?key=AIzaSyAKMC2UjlDZ9IkVgcDjksVonsN1HO7vyps&center=32.0853,34.7818&zoom=13"
+                    allowfullscreen>
+                </iframe>
+            `;
+        }
     }
     
     // Show route popup with route data
@@ -236,59 +328,18 @@ document.addEventListener('DOMContentLoaded', function() {
         lowestInclination.textContent = `${routeData.lowestInclination}%`;
         elevationGain.textContent = `±${routeData.elevationGain} meters`;
         
-        // Create a static map image (in a real implementation, we will use the Google Maps Static API)
-        routeMapImage.innerHTML = '';
-        
-        // For mockup, capture current map as static image
-        if (window.routeMap) {
-            try {
-                // Create a containing div for the map image
-                const mapImageDiv = document.createElement('div');
-                mapImageDiv.style.width = '100%';
-                mapImageDiv.style.height = '100%';
-                mapImageDiv.style.backgroundColor = '#ccc';
-                mapImageDiv.style.display = 'flex';
-                mapImageDiv.style.justifyContent = 'center';
-                mapImageDiv.style.alignItems = 'center';
-                mapImageDiv.style.position = 'relative';
-                
-                // Add a background image that looks like a map
-                mapImageDiv.style.backgroundImage = 'url("https://maps.googleapis.com/maps/api/staticmap?center=' + 
-                    encodeURIComponent(routeData.center) + 
-                    '&zoom=13&size=600x400&maptype=terrain&key=YOUR_API_KEY")';
-                mapImageDiv.style.backgroundSize = 'cover';
-                mapImageDiv.style.backgroundPosition = 'center';
-                
-                // Add a route overlay (simplified for mockup)
-                const routeOverlay = document.createElement('div');
-                routeOverlay.style.position = 'absolute';
-                routeOverlay.style.top = '0';
-                routeOverlay.style.left = '0';
-                routeOverlay.style.width = '100%';
-                routeOverlay.style.height = '100%';
-                routeOverlay.style.backgroundImage = 'linear-gradient(90deg, transparent 49%, #003049 50%, transparent 51%)';
-                routeOverlay.style.opacity = '0.7';
-                
-                mapImageDiv.appendChild(routeOverlay);
-                routeMapImage.appendChild(mapImageDiv);
-                
-                // Add text overlay with route name
-                const routeTextDiv = document.createElement('div');
-                routeTextDiv.style.position = 'absolute';
-                routeTextDiv.style.bottom = '15px';
-                routeTextDiv.style.left = '15px';
-                routeTextDiv.style.padding = '5px 10px';
-                routeTextDiv.style.backgroundColor = 'rgba(0, 48, 73, 0.8)';
-                routeTextDiv.style.color = 'white';
-                routeTextDiv.style.borderRadius = '4px';
-                routeTextDiv.textContent = 'Route Preview';
-                
-                mapImageDiv.appendChild(routeTextDiv);
-            } catch (e) {
-                console.error('Error creating map image:', e);
-                routeMapImage.textContent = 'Error generating route map image';
-            }
-        }
+        // Create a static map image using iframe
+        routeMapImage.innerHTML = `
+            <iframe
+                width="100%"
+                height="100%"
+                frameborder="0" 
+                style="border:0"
+                referrerpolicy="no-referrer-when-downgrade"
+                src="https://www.google.com/maps/embed/v1/directions?key=AIzaSyAKMC2UjlDZ9IkVgcDjksVonsN1HO7vyps&origin=${encodeURIComponent(routeData.startPoint)}&destination=${encodeURIComponent(routeData.endPoint)}&mode=walking"
+                allowfullscreen>
+            </iframe>
+        `;
         
         // Show the popup
         routePopup.classList.add('show-popup');
@@ -299,8 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const routePopup = document.getElementById('routePopup');
         routePopup.classList.remove('show-popup');
     }
-
-    /*
+    
     // Generate mock route data for demonstration
     function generateMockRouteData(startPoint, endPoint) {
         // Parse the coordinates (assuming they are in the format "lat, lng")
@@ -338,81 +388,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const distance = R * c; // Distance in kilometers
         return distance;
     }
-    */
-
-    // Initialize Google Maps
-    function initMap() {
-        // Check if we're on the route creation page
-        if (!document.getElementById('map')) {
-            return;
-        }
-        
-        try {
-            // Default center coordinates
-            const defaultCenter = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv coordinates
-            
-            // Create the map
-            const map = new google.maps.Map(document.getElementById('map'), {
-                center: defaultCenter,
-                zoom: 13,
-                mapTypeId: 'terrain' // Options: 'roadmap', 'satellite', 'hybrid', 'terrain'
-            });
-            
-            // Create markers for start and end points (initially hidden)
-            const startMarker = new google.maps.Marker({
-                position: defaultCenter,
-                map: null, // Initially not visible
-                title: 'Start Point',
-                icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
-            });
-            
-            const endMarker = new google.maps.Marker({
-                position: defaultCenter,
-                map: null, // Initially not visible
-                title: 'End Point',
-                icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
-            });
-            
-            // Add click event to the map to set markers
-            map.addListener('click', function(event) {
-                // Get the clicked coordinates
-                const clickedLocation = event.latLng;
-                
-                // Check which input is focused (or use a state variable)
-                if (document.activeElement === document.getElementById('startPoint')) {
-                    // Set start marker
-                    startMarker.setPosition(clickedLocation);
-                    startMarker.setMap(map);
-                    document.getElementById('startPoint').value = `${clickedLocation.lat().toFixed(6)}, ${clickedLocation.lng().toFixed(6)}`;
-                } else if (document.activeElement === document.getElementById('endPoint')) {
-                    // Set end marker
-                    endMarker.setPosition(clickedLocation);
-                    endMarker.setMap(map);
-                    document.getElementById('endPoint').value = `${clickedLocation.lat().toFixed(6)}, ${clickedLocation.lng().toFixed(6)}`;
-                }
-            });
-            
-            // Save map for later use
-            window.routeMap = map;
-            window.startMarker = startMarker;
-            window.endMarker = endMarker;
-            
-            console.log('Google Maps initialized');
-        } catch (error) {
-            console.error('Error initializing Google Maps:', error);
-            
-            // Show error message in map container
-            const mapContainer = document.getElementById('map');
-            if (mapContainer) {
-                mapContainer.innerHTML = '<div class="map-error">Error loading map. Please make sure you have an API key configured.</div>';
-            }
-        }
-    }
     
-    // update this to use actual image path
+    // When deploying, update this to use your actual image path
     // This is just a placeholder for local development
+    // logo.src = "C:/Users/tomer/Desktop/ORP/ORP website logo.png";
     
-    // Initialize additional functionality here
+    // Initialize any additional functionality here
     function init() {
         console.log('ORP Website initialized');
     }
