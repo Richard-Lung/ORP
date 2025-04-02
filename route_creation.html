@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ORP - Create Route</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Google Maps API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+    <!-- No need for Google Maps JavaScript API script when using iframes -->
 </head>
 <body>
     <div class="home-container">
+        <!-- Top navigation bar -->
         <div class="top-nav">
             <div class="menu-icon">
                 <i class="fas fa-bars" id="menuIcon"></i>
@@ -25,8 +26,10 @@
             </div>
         </div>
         
+        <!-- Divider line -->
         <div class="divider"></div>
         
+        <!-- Main content area with split layout -->
         <div class="main-content">
             <!-- Left section - Route Input -->
             <div class="content-left">
@@ -48,11 +51,21 @@
                 </div>
             </div>
 
+            <!-- Vertical divider -->
             <div class="vertical-divider"></div>
             
+            <!-- Right section - Map Display -->
             <div class="content-right">
                 <div class="map-container" id="map">
-                    <!-- Google Maps will be rendered here -->
+                    <iframe
+                        width="100%"
+                        height="100%"
+                        frameborder="0" 
+                        style="border:0"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        src="https://www.google.com/maps/embed/v1/view?key=AIzaSyAKMC2UjlDZ9IkVgcDjksVonsN1HO7vyps&center=32.0853,34.7818&zoom=13"
+                        allowfullscreen>
+                    </iframe>
                 </div>
             </div>
         </div>
