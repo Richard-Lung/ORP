@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +8,9 @@
     <link rel="stylesheet" href="styles.css">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- No need for Google Maps JavaScript API script when using iframes -->
+    <!-- We'll load the Google Maps API after our custom script -->
 </head>
+
 <body>
     <div class="home-container">
         <!-- Top navigation bar -->
@@ -25,52 +27,88 @@
                 <i class="fas fa-cog" id="settingsIcon"></i>
             </div>
         </div>
-        
+
         <!-- Divider line -->
         <div class="divider"></div>
-        
+
+        <!-- Mode selection tabs -->
+        <div class="mode-selection">
+            <button class="button tab-button active-button" id="routeSelectionModeBtn">
+                <i class="fas fa-route"></i> Route Creation
+            </button>
+            <button class="button tab-button" id="elevationSelectionModeBtn">
+                <i class="fas fa-mountain"></i> Elevation Analysis
+            </button>
+        </div>
+
         <!-- Main content area with split layout -->
         <div class="main-content">
             <!-- Left section - Route Input -->
             <div class="content-left">
-                <div class="section-container">
+                <!-- Route Creation Controls -->
+                <div class="section-container" id="routeSelectionControls">
                     <h2 class="section-title">Create Your Route</h2>
                     <div class="route-form">
                         <div class="input-group">
                             <label for="startPoint">Start Point</label>
-                            <input type="text" id="startPoint" placeholder="Enter coordinates or address" class="route-input">
+                            <input type="text" id="startPoint" placeholder="First selected point" class="route-input"
+                                readonly>
                         </div>
-                        
+
                         <div class="input-group">
                             <label for="endPoint">End Point</label>
-                            <input type="text" id="endPoint" placeholder="Enter coordinates or address" class="route-input">
+                            <input type="text" id="endPoint" placeholder="Last selected point" class="route-input"
+                                readonly>
                         </div>
-                        
+
+                        <button class="button mini-button" id="selectPointsBtn">Select Route Points</button>
                         <button class="button generate-route-button" id="generateRouteBtn">Generate Route</button>
                     </div>
+                </div>
+
+                <!-- Elevation Analysis Controls -->
+                <div class="section-container" id="elevationSelectionControls" style="display: none;">
+                    <h2 class="section-title">Elevation Analysis</h2>
+                    <div class="elevation-instructions">
+                        <p>Click on the map to add up to 5 points to define your analysis area.</p>
+                        <p>You can drag points to adjust them or right-click to remove them.</p>
+                        <p>The analysis area must not exceed 10km x 10km.</p>
+                    </div>
+                </div>
+
+                <!-- Common Elevation Controls -->
+                <div class="section-container elevation-section">
+                    <div class="elevation-status" id="elevationStatus">Ready to process elevation data</div>
+                    <div class="elevation-controls">
+                        <button class="button mini-button" id="analyzeElevationBtn" style="display:none;">Analyze
+                            Elevation</button>
+                        <button class="button mini-button" id="clearVisualizationBtn" style="display:none;">Clear
+                            Visualization</button>
+                        <button class="button mini-button" id="exportElevationBtn" style="display:none;">Export
+                            Data (CSV)</button>
+                    </div>
+                    <div class="elevation-stats" id="elevationStats"></div>
                 </div>
             </div>
 
             <!-- Vertical divider -->
             <div class="vertical-divider"></div>
-            
+
             <!-- Right section - Map Display -->
             <div class="content-right">
                 <div class="map-container" id="map">
-                    <iframe
-                        width="100%"
-                        height="100%"
-                        frameborder="0" 
-                        style="border:0"
-                        referrerpolicy="no-referrer-when-downgrade"
-                        src="https://www.google.com/maps/embed/v1/view?key=AIzaSyAKMC2UjlDZ9IkVgcDjksVonsN1HO7vyps&center=32.0853,34.7818&zoom=13"
-                        allowfullscreen>
-                    </iframe>
+                    <!-- Google Maps will be rendered here -->
+                </div>
+                <div class="map-instructions" id="routeMapInstructions">
+                    Press "Select Route Points" to begin creating your route
+                </div>
+                <div class="map-instructions" id="elevationMapInstructions" style="display: none;">
+                    Click to add points, drag to move, right-click to delete
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Route Details Popup -->
     <div class="popup-overlay" id="routePopup">
         <div class="popup-container">
@@ -112,6 +150,111 @@
         </div>
     </div>
 
-    <script src="functions.js"></script>
+    <style>
+        /* Additional styles for the new UI elements */
+
+        /* Mode selection tabs */
+        .mode-selection {
+            display: flex;
+            justify-content: center;
+            padding: 10px 20px;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-button {
+            margin: 0 10px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            padding: 8px 16px;
+        }
+
+        .tab-button.active-button {
+            background-color: #003049;
+        }
+
+        .tab-button i {
+            margin-right: 5px;
+        }
+
+        /* Elevation instructions */
+        .elevation-instructions {
+            background-color: rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .elevation-instructions p {
+            color: #fdf0d5;
+            margin: 5px 0;
+        }
+
+        /* Elevation section */
+        .elevation-section {
+            margin-top: 20px;
+        }
+
+        .elevation-status {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 4px;
+            color: #fdf0d5;
+            margin-bottom: 10px;
+            min-height: 20px;
+        }
+
+        .elevation-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .elevation-stats {
+            background-color: rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 4px;
+            color: #fdf0d5;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .elevation-legend {
+            font-family: Arial, sans-serif;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            margin: 10px;
+            font-size: 12px;
+        }
+
+        /* Updates for mini-button styling */
+        .mini-button {
+            margin-right: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* Space between Select Points and Generate Route buttons */
+        #selectPointsBtn {
+            margin-right: 10px;
+        }
+    </style>
+
+    <!-- Load our app scripts -->
+    <script src="app.js"></script>
+
+    <!-- Load our additional scripts (changed from functions.js to separate files) -->
+    <script src="geo.js"></script>
+    <script src="map.js"></script>
+    <script src="elevation.js"></script>
+    <script src="popup.js"></script>
+    <script src="route.js"></script>
+
+    <!-- Load Google Maps API after our custom script -->
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAKMC2UjlDZ9IkVgcDjksVonsN1HO7vyps&libraries=visualization&callback=initMap"
+        async defer></script>
 </body>
+
 </html>

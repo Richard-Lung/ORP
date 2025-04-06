@@ -486,6 +486,43 @@ body {
     display: flex;
 }
 
+/* Additional styles for the map functionality */
+.mini-button {
+    background-color: #003049;
+    color: white;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    margin-top: 8px;
+    width: auto;
+    display: inline-block;
+}
+
+.active-button {
+    background-color: #d62828;
+    transform: scale(1.05);
+}
+
+.map-instructions {
+    text-align: center;
+    color: #fdf0d5;
+    padding: 8px;
+    font-size: 0.9rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 0 0 8px 8px;
+    margin-top: -8px;
+}
+
+/* Adjust input group for the buttons */
+.route-form .input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.route-input {
+    margin-bottom: 8px;
+}
+
 /* Responsive adjustments for home page, route creation page, and popup */
 @media (max-width: 768px) {
     .routes-list {
@@ -527,5 +564,124 @@ body {
     .route-map-image {
         height: 250px;
         margin-bottom: 15px;
+    }
+}
+
+/* Additional CSS to add to your styles.css file */
+
+/* Mode selection tabs */
+.mode-selection {
+    display: flex;
+    justify-content: center;
+    padding: 10px 20px;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.tab-button {
+    margin: 0 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 8px 16px;
+    transition: background-color 0.3s ease;
+}
+
+.tab-button.active-button {
+    background-color: #003049;
+    transform: none; /* Override the default transform */
+}
+
+.tab-button i {
+    margin-right: 5px;
+}
+
+/* Elevation instructions */
+.elevation-instructions {
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.elevation-instructions p {
+    color: #fdf0d5;
+    margin: 5px 0;
+    font-size: 0.9rem;
+}
+
+/* Enhanced elevation section */
+.elevation-section {
+    margin-top: 20px;
+}
+
+.elevation-status {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 4px;
+    color: #fdf0d5;
+    margin-bottom: 10px;
+    min-height: 20px;
+}
+
+.elevation-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.elevation-stats {
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    color: #fdf0d5;
+    margin-top: 10px;
+    display: none;
+}
+
+.elevation-legend {
+    font-family: Arial, sans-serif;
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    margin: 10px;
+    font-size: 12px;
+    z-index: 1000;
+}
+
+/* Enhanced button states */
+.mini-button {
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.mini-button:hover {
+    background-color: #003049dd;
+}
+
+.mini-button.active-button {
+    background-color: #d62828;
+    transform: scale(1.05);
+}
+
+/* Responsive design for elevation controls */
+@media (max-width: 768px) {
+    .elevation-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .mini-button {
+        width: 100%;
+    }
+    
+    .mode-selection {
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .tab-button {
+        width: 100%;
+        margin: 0;
     }
 }
