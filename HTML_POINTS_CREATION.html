@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elevation Grid Map</title>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA15_IAExIeGyJRTz3cUmXqBQ6w7RywzOo&libraries=visualization"></script>
+  <style>
+    #map { width: 100%; height: 500px; }
+    #controls { margin-top: 10px; }
+    #loading { display: none; color: #444; font-weight: bold; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h3>Click to add up to 5 points. Drag to move, right-click to delete. Bounding box must not exceed 10km x 10km.</h3>
+  <div id="map"></div>
+  <div id="controls">
+    <button onclick="downloadTxtFile()">Download Markers</button>
+    <button onclick="generateElevationGrid()">Generate Elevation Grid</button>
+    <button onclick="downloadElevationData()" id="downloadBtn" disabled>Download Elevation Data</button>
+    <div id="loading">⏳ Loading elevation data... Please wait.</div>
+  </div>
+
+  <script>
+    let map;
+    let markers = [];
+    let selectedPoints = [];
+    let boundingBox = null;
+    let elevationPoints = [];
+    let elevationData = [];
+    let heatmap = null;
+    const BUFFER_KM = 1;
+    const MAX_POINTS = 5;
+    const MAX_BOX_KM = 10;
+    const markerColors = [
+      "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+      "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+      "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+      "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
+      "http://maps.google.com/mapfiles/ms/icons/purple-dot.png"
+    ];
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 37.7749, lng: -122.4194 },
+        zoom: 14,
+      });
+
+      map.addListener("click", (event) => {
+        if (markers.length >= MAX_POINTS) {
+          alert("Maximum 5 points reached.");
+          return;
+        }
+        addMarker(event.latLng);
+      });
+    }
+
+    function addMarker(location) {
+      let tempPoints = [...selectedPoints, { lat: location.lat(), lng: location.lng() }];
+      if (!isBoundingBoxWithinLimit(tempPoints)) {
+        alert("Markers exceed 10km x 10km bounding box limit.");
+        return;
+      }
+
+      let index = markers.length;
+      const marker = new google.maps.Marker({
+        position: location,
+        map: map,
+        draggable: true,
+        label: (index + 1).toString(),
+        icon: {
+          url: markerColors[index],
+          scaledSize: new google.maps.Size(40, 40)
+        }
+      });
+
+      marker.addListener("dragend", () => {
+        const newPosition = {
+          lat: marker.getPosition().lat(),
+          lng: marker.getPosition().lng()
+        };
+        let tempPoints = [...selectedPoints];
+        tempPoints[markers.indexOf(marker)] = newPosition;
+        if (!isBoundingBoxWithinLimit(tempPoints)) {
+          alert("New marker position exceeds 10km x 10km bounding box limit. Reverting.");
+          marker.setPosition(selectedPoints[markers.indexOf(marker)]);
+          return;
+        }
+        selectedPoints[markers.indexOf(marker)] = newPosition;
+        drawBoundingBox();
+      });
+
+      marker.addListener("rightclick", () => {
+        marker.setMap(null);
+        let idx = markers.indexOf(marker);
+        markers.splice(idx, 1);
+        selectedPoints.splice(idx, 1);
+        updateMarkerLabels();
+        drawBoundingBox();
+      });
+
+      markers.push(marker);
+      selectedPoints.push({ lat: location.lat(), lng: location.lng() });
+      drawBoundingBox();
+    }
+
+    function updateMarkerLabels() {
+      markers.forEach((marker, i) => {
+        marker.setLabel((i + 1).toString());
+        marker.setIcon({
+          url: markerColors[i],
+          scaledSize: new google.maps.Size(40, 40)
+        });
+      });
+    }
+
+    function drawBoundingBox() {
+      if (boundingBox) boundingBox.setMap(null);
+      if (selectedPoints.length < 1) return;
+
+      let latitudes = selectedPoints.map(p => p.lat);
+      let longitudes = selectedPoints.map(p => p.lng);
+
+      let minLat = Math.min(...latitudes) - 0.009 * BUFFER_KM;
+      let maxLat = Math.max(...latitudes) + 0.009 * BUFFER_KM;
+      let minLng = Math.min(...longitudes) - 0.009 * BUFFER_KM;
+      let maxLng = Math.max(...longitudes) + 0.009 * BUFFER_KM;
+
+      boundingBox = new google.maps.Rectangle({
+        bounds: { north: maxLat, south: minLat, east: maxLng, west: minLng },
+        strokeColor: "#FF0000",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillOpacity: 0,
+        clickable: false,
+        map: map
+      });
+    }
+
+    function isBoundingBoxWithinLimit(points) {
+      if (points.length < 1) return true;
+
+      let latitudes = points.map(p => p.lat);
+      let longitudes = points.map(p => p.lng);
+
+      const toKm = (deg, isLat = true) => isLat ? deg * 111 : deg * 111 * Math.cos((Math.PI / 180) * latitudes[0]);
+
+      const latDistance = toKm(Math.max(...latitudes) - Math.min(...latitudes));
+      const lngDistance = toKm(Math.max(...longitudes) - Math.min(...longitudes), false);
+
+      return latDistance <= MAX_BOX_KM && lngDistance <= MAX_BOX_KM;
+    }
+
+    function downloadTxtFile() {
+      const content = selectedPoints.map((p, i) => `${i + 1}: ${p.lat}, ${p.lng}`).join("\n");
+      const blob = new Blob([content], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "coordinates.txt";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function generateElevationGrid() {
+      if (!boundingBox) return alert("Add some points first to draw the bounding box.");
+
+      const bounds = boundingBox.getBounds();
+      const step = 0.00009; // ~10 meters
+      elevationPoints = [];
+      elevationData = [];
+      document.getElementById("loading").style.display = "block";
+      document.getElementById("downloadBtn").disabled = true;
+
+      for (let lat = bounds.getSouthWest().lat(); lat <= bounds.getNorthEast().lat(); lat += step) {
+        for (let lng = bounds.getSouthWest().lng(); lng <= bounds.getNorthEast().lng(); lng += step) {
+          elevationPoints.push({ lat, lng });
+        }
+      }
+
+      elevationPoints.push(...selectedPoints);
+      fetchElevationData();
+    }
+
+    function fetchElevationData() {
+      const elevator = new google.maps.ElevationService();
+      elevationData = [];
+      let batchSize = 512;
+
+      const fetchBatch = (start) => {
+        const batch = elevationPoints.slice(start, start + batchSize);
+        if (batch.length === 0) {
+          document.getElementById("loading").style.display = "none";
+          document.getElementById("downloadBtn").disabled = false;
+          return;
+        }
+
+        elevator.getElevationForLocations({ locations: batch }, (results, status) => {
+          if (status === "OK") {
+            elevationData.push(...results);
+            if (start + batchSize < elevationPoints.length) {
+              fetchBatch(start + batchSize);
+            } else {
+              document.getElementById("loading").style.display = "none";
+              document.getElementById("downloadBtn").disabled = false;
+              alert("Elevation data ready! You can now download it.");
+              showElevationHeatmap();
+            }
+          } else {
+            alert("Elevation API error: " + status);
+            document.getElementById("loading").style.display = "none";
+          }
+        });
+      };
+
+      fetchBatch(0);
+    }
+
+    function showElevationHeatmap() {
+      const weightedData = elevationData.map(p => ({
+        location: p.location,
+        weight: p.elevation
+      }));
+
+      if (heatmap) heatmap.setMap(null);
+
+      heatmap = new google.maps.visualization.HeatmapLayer({
+        data: weightedData,
+        radius: 8
+      });
+      heatmap.setMap(map);
+    }
+
+    function downloadElevationData() {
+      if (!elevationData || elevationData.length === 0) {
+        alert("No elevation data available yet. Please wait a few seconds after generating the grid.");
+        return;
+      }
+
+      const rows = elevationData.map(p => `${p.location.lat()},${p.location.lng()},${p.elevation}`);
+      const content = "lat,lng,elevation\n" + rows.join("\n");
+
+      const blob = new Blob([content], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "elevation_data.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    window.onload = initMap;
+  </script>
+</body>
+</html>
