@@ -80,8 +80,10 @@ ORP.pages.route = {
         const selectPointsBtn = document.getElementById('selectPointsBtn');
         
         if (!this.isSelectingPoints) {
-            // Enter selection mode
+            // Enter selection mode - explicitly set to true
+            console.log('Enabling point selection mode');
             this.isSelectingPoints = true;
+            
             if (selectPointsBtn) {
                 selectPointsBtn.classList.add('active-button');
                 selectPointsBtn.textContent = 'Cancel Selection';
@@ -111,8 +113,10 @@ ORP.pages.route = {
             if (exportElevationBtn) exportElevationBtn.style.display = 'none';
             
         } else {
-            // Exit selection mode
+            // Exit selection mode - explicitly set to false
+            console.log('Disabling point selection mode');
             this.isSelectingPoints = false;
+            
             if (selectPointsBtn) {
                 selectPointsBtn.classList.remove('active-button');
                 selectPointsBtn.textContent = 'Select Route Points';
@@ -216,7 +220,11 @@ ORP.pages.route = {
     },
     
     addRoutePoint: function(location) {
-        if (!this.isSelectingPoints) return;
+        // Double-check that we're in selection mode
+        if (this.isSelectingPoints !== true) {
+            console.log('Point addition blocked - not in selection mode');
+            return;
+        }
         
         if (this.routePoints.length >= this.maxPoints) {
             alert(`Maximum of ${this.maxPoints} points reached.`);
@@ -440,12 +448,18 @@ ORP.pages.route = {
             // Display the route popup with the mock data
             ORP.components.popup.showRoutePopup(mockRouteData);
             
-            // Exit selection mode
+            // Explicitly exit selection mode
             self.isSelectingPoints = false;
             const selectPointsBtn = document.getElementById('selectPointsBtn');
             if (selectPointsBtn) {
                 selectPointsBtn.classList.remove('active-button');
                 selectPointsBtn.textContent = 'Select Route Points';
+            }
+            
+            // Update instructions
+            const instructions = document.getElementById('routeMapInstructions');
+            if (instructions) {
+                instructions.textContent = 'Route generated. Press "Select Route Points" to edit route';
             }
             
             // Set up elevation analysis
@@ -560,11 +574,36 @@ ORP.pages.route = {
     setupMapClickHandler: function() {
         const self = this;
         
+        // Remove any existing click handlers from the map
+        if (window.routeMap) {
+            google.maps.event.clearListeners(window.routeMap, 'click');
+        }
+        
         // Add the map click handler function to the window scope
         window.handleMapClick = function(event) {
-            if (self.isSelectingPoints) {
+            // Only add points if selection mode is active
+            if (self.isSelectingPoints === true) {
                 self.addRoutePoint(event.latLng);
+            } else {
+                // Provide feedback when users click without being in selection mode
+                console.log('Point selection is disabled. Current isSelectingPoints value:', self.isSelectingPoints);
+                
+                const instructions = document.getElementById('routeMapInstructions');
+                if (instructions) {
+                    const originalText = instructions.textContent;
+                    instructions.textContent = 'Please press "Select Route Points" button first to add points';
+                    
+                    // Restore original text after a short delay
+                    setTimeout(function() {
+                        instructions.textContent = originalText;
+                    }, 2000);
+                }
             }
         };
+        
+        // Add the click listener to the map
+        if (window.routeMap) {
+            window.routeMap.addListener('click', window.handleMapClick);
+        }
     }
 };
