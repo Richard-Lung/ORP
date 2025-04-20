@@ -71,9 +71,65 @@ ORP.pages.route = {
         
         if (selectPointsBtn) {
             selectPointsBtn.addEventListener('click', function() {
-                self.togglePointSelectionMode();
+                // Check if we already have route points on the map
+                if (self.routePoints.length > 0) {
+                    // Show custom confirmation popup
+                    self.showConfirmationPopup(function(confirmed) {
+                        if (confirmed) {
+                            // User chose to clear the route
+                            self.clearRoutePoints();
+                            self.togglePointSelectionMode();
+                        } else {
+                            // User chose to keep the route and continue editing
+                            // Just enable selection mode without clearing
+                            self.isSelectingPoints = true;
+                            selectPointsBtn.classList.add('active-button');
+                            selectPointsBtn.textContent = 'Cancel Selection';
+                            
+                            // Update instructions
+                            const instructions = document.getElementById('routeMapInstructions');
+                            if (instructions) {
+                                instructions.textContent = 'Continue editing your route. Click to add more points.';
+                            }
+                        }
+                    });
+                } else {
+                    // No existing route points, just toggle selection mode normally
+                    self.togglePointSelectionMode();
+                }
             });
         }
+    },
+    
+    // Show custom confirmation popup
+    showConfirmationPopup: function(callback) {
+        const popup = document.getElementById('confirmationPopup');
+        const yesBtn = document.getElementById('confirmationYes');
+        const noBtn = document.getElementById('confirmationNo');
+        
+        // Show the popup
+        popup.classList.add('show-confirmation');
+        
+        // Set up event listeners
+        const handleYes = function() {
+            popup.classList.remove('show-confirmation');
+            removeListeners();
+            callback(true);
+        };
+        
+        const handleNo = function() {
+            popup.classList.remove('show-confirmation');
+            removeListeners();
+            callback(false);
+        };
+        
+        const removeListeners = function() {
+            yesBtn.removeEventListener('click', handleYes);
+            noBtn.removeEventListener('click', handleNo);
+        };
+        
+        yesBtn.addEventListener('click', handleYes);
+        noBtn.addEventListener('click', handleNo);
     },
     
     togglePointSelectionMode: function() {
@@ -94,9 +150,6 @@ ORP.pages.route = {
             if (instructions) {
                 instructions.textContent = 'Click on map to add up to 5 points. Right-click to remove. Drag to move.';
             }
-            
-            // Clear existing points
-            this.clearRoutePoints();
             
             // Hide any elevated data visualization
             if (ORP.utils.elevation) {
@@ -127,9 +180,6 @@ ORP.pages.route = {
             if (instructions) {
                 instructions.textContent = 'Press "Select Route Points" to begin creating your route';
             }
-            
-            // Clear points
-            this.clearRoutePoints();
         }
     },
     
@@ -153,6 +203,18 @@ ORP.pages.route = {
         if (window.directionsRenderer) {
             window.directionsRenderer.setDirections({routes: []});
         }
+        
+        // Clear elevation visualization if it exists
+        if (ORP.utils.elevation) {
+            ORP.utils.elevation.clearVisualization();
+        }
+        
+        // Clear the input fields
+        const startPointInput = document.getElementById('startPoint');
+        const endPointInput = document.getElementById('endPoint');
+        
+        if (startPointInput) startPointInput.value = '';
+        if (endPointInput) endPointInput.value = '';
     },
     
     // Calculate if the bounding box is within size limits (1km x 1km)

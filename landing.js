@@ -20,8 +20,6 @@ ORP.pages.landing = {
             console.log('Continue as Guest button clicked');
             window.location.href = 'login_signin.html';
 
-            // In a real implementation, you might skip the login step
-            // or implement a special guest authentication flow
         });
 
         console.log('ORP Landing Page initialized');

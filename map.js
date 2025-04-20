@@ -6,14 +6,12 @@
 ORP.components.map = {
     // Initialize Google Maps
     init: function() {
-        // Check if we're on the route creation page
         if (!document.getElementById('map')) {
             console.log('Map element not found, skipping map initialization');
             return;
         }
 
         try {
-            // Default center coordinates (can be adjusted as needed)
             const defaultCenter = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv coordinates
 
             // Create the map
@@ -45,7 +43,7 @@ ORP.components.map = {
             const directionsService = new google.maps.DirectionsService();
             const directionsRenderer = new google.maps.DirectionsRenderer({
                 map: map,
-                suppressMarkers: true // We'll use our own markers
+                suppressMarkers: true 
             });
 
             // Add click event to the map
@@ -119,18 +117,16 @@ ORP.components.map = {
         }
 
         try {
-            // Parse the coordinates
             const startCoords = startPoint.split(',').map(coord => parseFloat(coord.trim()));
             const endCoords = endPoint.split(',').map(coord => parseFloat(coord.trim()));
 
             const start = new google.maps.LatLng(startCoords[0], startCoords[1]);
             const end = new google.maps.LatLng(endCoords[0], endCoords[1]);
 
-            // Set up the request for the directions service
             const request = {
                 origin: start,
                 destination: end,
-                travelMode: google.maps.TravelMode.WALKING // Use WALKING for outdoor routes
+                travelMode: google.maps.TravelMode.WALKING 
             };
 
             // Get directions
@@ -150,22 +146,18 @@ ORP.components.map = {
     
     // Clear the map (removing routes, markers, etc.)
     clearMap: function() {
-        // Clear directions
         if (window.directionsRenderer) {
             window.directionsRenderer.setDirections({routes: []});
         }
         
-        // Clear markers
         if (window.startMarker) window.startMarker.setMap(null);
         if (window.endMarker) window.endMarker.setMap(null);
         
-        // Clear bounding box
         if (window.boundingBoxRectangle) {
             window.boundingBoxRectangle.setMap(null);
             window.boundingBoxRectangle = null;
         }
         
-        // Clear any elevation visualization
         if (ORP.utils.elevation) {
             ORP.utils.elevation.clearVisualization();
         }
@@ -174,10 +166,8 @@ ORP.components.map = {
 
 // Auto-initialize map when Google Maps API is loaded
 function initMap() {
-    // Initialize the map component
     ORP.components.map.init();
     
-    // Initialize the elevation component (if exists)
     if (ORP.utils.elevation && ORP.utils.elevation.init) {
         ORP.utils.elevation.init();
     }

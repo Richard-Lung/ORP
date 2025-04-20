@@ -4,18 +4,17 @@
  */
 
 ORP.components.popup = {
+    currentRouteData: null,
+    
     init: function() {
-        // Get popup elements
         const routePopup = document.getElementById('routePopup');
         const closePopupBtn = document.getElementById('closePopup');
         const saveRouteBtn = document.getElementById('saveRouteBtn');
 
-        // Set up close button
         if (closePopupBtn) {
             closePopupBtn.addEventListener('click', this.hideRoutePopup);
         }
 
-        // Close popup when clicking outside the popup content
         if (routePopup) {
             routePopup.addEventListener('click', function (event) {
                 if (event.target === routePopup) {
@@ -28,38 +27,47 @@ ORP.components.popup = {
         if (saveRouteBtn) {
             saveRouteBtn.addEventListener('click', function () {
                 const routeName = document.getElementById('routeName').value.trim();
-
-                if (routeName === '') {
-                    alert('Please enter a name for your route');
-                    return;
-                }
-
-                // In a real implementation, you would save the route to a database
+                
                 const startPoint = document.getElementById('startPoint').value.trim();
                 const endPoint = document.getElementById('endPoint').value.trim();
 
-                const routeData = {
-                    name: routeName,
-                    startPoint: startPoint,
-                    endPoint: endPoint,
-                    // Add other route details as needed
-                };
+                const routeData = ORP.components.popup.currentRouteData || {};
+                routeData.name = routeName || null; // Will be auto-generated if empty
+                routeData.startPoint = startPoint;
+                routeData.endPoint = endPoint;
+                
+                if (ORP.pages.route && ORP.pages.route.routePoints) {
+                    routeData.routePoints = ORP.pages.route.routePoints;
+                }
 
-                // Log the data that would be saved
-                console.log('Saving route data:', routeData);
-                alert(`Route "${routeName}" saved successfully!`);
-
-                // Hide the popup
-                ORP.components.popup.hideRoutePopup();
-
-                // Redirect to the home page
-                window.location.href = 'home_page.html';
+                // Save the route data
+                if (ORP.utils.routesStorage) {
+                    const saved = ORP.utils.routesStorage.saveRoute(routeData);
+                    
+                    if (saved) {
+                        console.log('Route saved successfully:', routeData);
+                        alert(`Route saved successfully!`);
+                        
+                        ORP.components.popup.hideRoutePopup();
+                        
+                        const routeNameInput = document.getElementById('routeName');
+                        if (routeNameInput) {
+                            routeNameInput.value = '';
+                        }
+                    } else {
+                        alert('Error saving route. Please try again.');
+                    }
+                } else {
+                    alert('Route storage functionality not available');
+                }
             });
         }
     },
 
     // Show route popup with route data
     showRoutePopup: function(routeData) {
+        this.currentRouteData = routeData;
+        
         const routePopup = document.getElementById('routePopup');
         const routeMapImage = document.getElementById('routeMapImage');
         const totalDistance = document.getElementById('totalDistance');
@@ -117,7 +125,6 @@ ORP.components.popup = {
             routeMapImage.textContent = 'Error generating route map image';
         }
 
-        // Show the popup
         routePopup.classList.add('show-popup');
     },
 

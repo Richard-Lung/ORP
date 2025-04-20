@@ -2,17 +2,14 @@
  * Map initialization bridge for Google Maps API
  */
 
-// This function will be called by the Google Maps API
 function initMap() {
     console.log("Google Maps API loaded");
     
-    // Try to initialize the map component if it exists
     if (window.ORP && ORP.components && ORP.components.map) {
         ORP.components.map.init();
     } else {
         console.error("ORP map component not loaded yet");
         
-        // Set up a retry mechanism
         let retryCount = 0;
         const maxRetries = 5;
         const retryInterval = 500; // milliseconds

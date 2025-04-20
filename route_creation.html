@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="styles.css">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- We'll load the Google Maps API after our custom script -->
 </head>
 
 <body>
@@ -30,16 +29,6 @@
 
         <!-- Divider line -->
         <div class="divider"></div>
-
-        <!-- Mode selection tabs -->
-        <div class="mode-selection">
-            <button class="button tab-button active-button" id="routeSelectionModeBtn">
-                <i class="fas fa-route"></i> Route Creation
-            </button>
-            <button class="button tab-button" id="elevationSelectionModeBtn">
-                <i class="fas fa-mountain"></i> Elevation Analysis
-            </button>
-        </div>
 
         <!-- Main content area with split layout -->
         <div class="main-content">
@@ -97,7 +86,6 @@
             <!-- Right section - Map Display -->
             <div class="content-right">
                 <div class="map-container" id="map">
-                    <!-- Google Maps will be rendered here -->
                 </div>
                 <div class="map-instructions" id="routeMapInstructions">
                     Press "Select Route Points" to begin creating your route
@@ -146,6 +134,18 @@
                     </div>
                     <button class="button save-route-button" id="saveRouteBtn">Save Route</button>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confirmation Popup -->
+    <div class="confirmation-overlay" id="confirmationPopup">
+        <div class="confirmation-container">
+            <div class="confirmation-title">Route in Progress</div>
+            <div class="confirmation-message">Do you want to clear the current route and start a new one?</div>
+            <div class="confirmation-buttons">
+                <div class="confirmation-button confirmation-no" id="confirmationNo">No, Continue Editing</div>
+                <div class="confirmation-button confirmation-yes" id="confirmationYes">Yes, Start New</div>
             </div>
         </div>
     </div>
@@ -241,17 +241,14 @@
         }
     </style>
 
-    <!-- Load our app scripts -->
     <script src="app.js"></script>
-
-    <!-- Load our additional scripts (changed from functions.js to separate files) -->
     <script src="geo.js"></script>
     <script src="map.js"></script>
     <script src="elevation.js"></script>
+    <script src="routes-storage.js"></script>
     <script src="popup.js"></script>
     <script src="route.js"></script>
 
-    <!-- Load Google Maps API after our custom script -->
     <script
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAKMC2UjlDZ9IkVgcDjksVonsN1HO7vyps&libraries=visualization&callback=initMap"
         async defer></script>

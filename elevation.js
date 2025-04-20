@@ -3,16 +3,11 @@
  */
 
 ORP.utils.elevation = {
-    // Array to store selected points
     selectedPoints: [],
-    // Maximum number of points allowed
     MAX_POINTS: 5,
-    // Maximum bounding box size in kilometers
     MAX_BOX_KM: 10,
-    // Visual elements references
     elevationRectangles: [],
     boundingBoxRectangle: null,
-    // Marker colors for different points
     markerColors: [
         "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
         "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
@@ -20,7 +15,6 @@ ORP.utils.elevation = {
         "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
         "http://maps.google.com/mapfiles/ms/icons/purple-dot.png"
     ],
-    // Array to store markers
     markers: [],
 
     // Initialize the elevation component
@@ -30,7 +24,6 @@ ORP.utils.elevation = {
         this.markers = [];
         this.clearVisualization();
 
-        // Add click handler to the map for point selection
         if (window.routeMap) {
             const self = this;
             window.routeMap.addListener("click", function (event) {
@@ -43,7 +36,6 @@ ORP.utils.elevation = {
         }
     },
 
-    // Handle map click to add points
     handleMapClick: function (event) {
         if (this.selectedPoints.length >= this.MAX_POINTS) {
             alert("Maximum " + this.MAX_POINTS + " points reached.");
@@ -64,7 +56,6 @@ ORP.utils.elevation = {
         this.addMarker(location);
     },
 
-    // Add a marker to the map
     addMarker: function (location) {
         const index = this.markers.length;
         const self = this;
@@ -80,7 +71,6 @@ ORP.utils.elevation = {
             }
         });
 
-        // Add drag end event listener
         marker.addListener("dragend", function () {
             const newPosition = {
                 lat: marker.getPosition().lat(),
@@ -100,7 +90,6 @@ ORP.utils.elevation = {
             self.drawBoundingBox();
         });
 
-        // Add right click event to delete marker
         marker.addListener("rightclick", function () {
             marker.setMap(null);
             const idx = self.markers.indexOf(marker);
@@ -119,7 +108,6 @@ ORP.utils.elevation = {
         this.drawBoundingBox();
     },
 
-    // Update marker labels when markers are removed
     updateMarkerLabels: function () {
         for (let i = 0; i < this.markers.length; i++) {
             this.markers[i].setLabel((i + 1).toString());
@@ -130,7 +118,6 @@ ORP.utils.elevation = {
         }
     },
 
-    // Calculate if the bounding box is within size limits
     isBoundingBoxWithinLimit: function (points) {
         if (points.length < 1) return true;
 

@@ -24,13 +24,11 @@ ORP.utils.geo = {
         const startCoords = startPoint.split(',').map(coord => parseFloat(coord.trim()));
         const endCoords = endPoint.split(',').map(coord => parseFloat(coord.trim()));
 
-        // Get min and max coordinates
         const minLat = Math.min(startCoords[0], endCoords[0]);
         const maxLat = Math.max(startCoords[0], endCoords[0]);
         const minLng = Math.min(startCoords[1], endCoords[1]);
         const maxLng = Math.max(startCoords[1], endCoords[1]);
 
-        // Calculate center point
         const centerLat = (minLat + maxLat) / 2;
         const centerLng = (minLng + maxLng) / 2;
 
@@ -45,11 +43,9 @@ ORP.utils.geo = {
         let boxLatDistance = Math.max(latDistance, 200);
         let boxLngDistance = Math.max(lngDistance, 200);
 
-        // Then cap at 1km maximum
         boxLatDistance = Math.min(boxLatDistance, 1000);
         boxLngDistance = Math.min(boxLngDistance, 1000);
 
-        // Convert back to coordinate differences
         // 111,111 meters = 1 degree of latitude (approximately)
         const latDiff = boxLatDistance / 111111;
 
@@ -63,7 +59,7 @@ ORP.utils.geo = {
             south: centerLat - (latDiff / 2),
             east: centerLng + (lngDiff / 2),
             west: centerLng - (lngDiff / 2),
-            // Additional info for debugging
+            // debugging
             centerLat: centerLat,
             centerLng: centerLng,
             widthMeters: boxLngDistance,
@@ -82,11 +78,9 @@ ORP.utils.geo = {
             const startCoords = startPoint.split(',').map(coord => parseFloat(coord.trim()));
             const endCoords = endPoint.split(',').map(coord => parseFloat(coord.trim()));
 
-            // Calculate center point between start and end
             const centerLat = (startCoords[0] + endCoords[0]) / 2;
             const centerLng = (startCoords[1] + endCoords[1]) / 2;
 
-            // Calculate mock distance (as the crow flies)
             const distance = this.calculateDistance(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
 
             return {
@@ -101,7 +95,6 @@ ORP.utils.geo = {
         } catch (e) {
             console.error('Error generating mock data:', e);
 
-            // Return fallback values
             return {
                 startPoint: startPoint,
                 endPoint: endPoint,
@@ -114,7 +107,6 @@ ORP.utils.geo = {
         }
     },
 
-    // Parse coordinates string into an object
     parseCoordinates: function(coordString) {
         try {
             const coords = coordString.split(',').map(coord => parseFloat(coord.trim()));
@@ -128,7 +120,6 @@ ORP.utils.geo = {
         }
     },
 
-    // Format coordinates object to string
     formatCoordinates: function(coordObj) {
         return `${coordObj.lat.toFixed(6)}, ${coordObj.lng.toFixed(6)}`;
     }
