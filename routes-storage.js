@@ -24,6 +24,11 @@ ORP.utils.routesStorage = {
             
             routeData.createdAt = new Date().toISOString();
             
+            // Initialize favorite status to false for new routes
+            if (routeData.favorite === undefined) {
+                routeData.favorite = false;
+            }
+            
             routes.push(routeData);
             
             localStorage.setItem('orpRoutes', JSON.stringify(routes));
@@ -32,6 +37,18 @@ ORP.utils.routesStorage = {
             return true;
         } catch (error) {
             console.error('Error saving route:', error);
+            return false;
+        }
+    },
+    
+    // Save all routes (for updating favorites)
+    saveRoutes: function(routes) {
+        try {
+            localStorage.setItem('orpRoutes', JSON.stringify(routes));
+            console.log('All routes updated');
+            return true;
+        } catch (error) {
+            console.error('Error updating routes:', error);
             return false;
         }
     },

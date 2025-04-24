@@ -16,10 +16,21 @@
         <div class="top-nav">
             <div class="menu-icon">
                 <i class="fas fa-bars" id="menuIcon"></i>
+                <div class="dropdown-menu" id="navDropdown">
+                    <div class="dropdown-item" id="createRouteMenuItem">
+                        <i class="fas fa-map-marked-alt"></i> Create Route
+                    </div>
+                    <div class="dropdown-item" id="homeMenuItem">
+                        <i class="fas fa-home"></i> Homepage
+                    </div>
+                    <div class="dropdown-item" id="loginLogoutMenuItem">
+                        <i class="fas fa-sign-out-alt"></i> <span id="loginLogoutText">Logout</span>
+                    </div>
+                </div>
             </div>
             <div class="nav-logo">
                 <img src="images/ORP website logo.png" alt="ORP logo" class="nav-logo-img" id="logo">
-                <h2 class="nav-title">ORP</h2>
+                <h2 class="nav-title"></h2>
             </div>
             <div class="user-controls">
                 <i class="fas fa-user" id="userIcon"></i>
@@ -250,8 +261,8 @@
     <script src="route.js"></script>
 
     <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAKMC2UjlDZ9IkVgcDjksVonsN1HO7vyps&libraries=visualization&callback=initMap"
-        async defer></script>
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAKMC2UjlDZ9IkVgcDjksVonsN1HO7vyps&libraries=visualization&callback=initMap"
+    async defer></script>
 </body>
 
 </html>

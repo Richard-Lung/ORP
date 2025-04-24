@@ -182,8 +182,9 @@ body::before {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: 5px 20px;
+    padding: 2px 20px;
     background-color: #4e5a607f;
+    height: 90px;
 }
 
 .menu-icon, .user-controls {
@@ -195,18 +196,14 @@ body::before {
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-top: 30px;
 }
 
 .nav-logo-img {
     max-width: 150px;
     height: auto;
-    margin-bottom: 5px;
-}
-
-.nav-title {
-    color: #ffffff;
-    font-size: 1.5rem;
-    margin: 0;
+    margin-bottom: 10px;
+    margin-top: -5px;
 }
 
 .user-controls i {
@@ -325,9 +322,11 @@ body::before {
 }
 
 .content-right {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    position: sticky;
+    top: 150px;
+    align-self: flex-start;
+    padding: 20px;
+    height: auto;
 }
 
 .adventure-prompt {
@@ -813,4 +812,133 @@ body::before {
 
 .show-confirmation {
     display: flex;
+}
+
+
+/* In styles.css */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.edit-button {
+    background-color: #4E5A60;
+    border: 1px solid white;
+    color: white;
+    padding: 6px 6px;
+    font-size: 0.9rem;
+    border-radius: 4px;
+}
+
+.edit-button:hover {
+    background-color: #b9d6f27e;
+    transform: scale(1.05);
+}
+
+
+/* Edit mode styles */
+.edit-controls {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    display: none;
+    justify-content: space-between;
+    padding: 0 10px;
+    z-index: 5;
+}
+
+.favorite-icon, .delete-icon {
+    font-size: 1.2rem;
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s, color 0.2s;
+}
+
+.favorite-icon {
+    color: #ccc;
+}
+
+.favorite-icon.favorite-active {
+    color: #FFD700; /* Gold color for favorites */
+}
+
+.delete-icon {
+    color: #FF5252;
+}
+
+.favorite-icon:hover, .delete-icon:hover {
+    transform: scale(1.2);
+}
+
+/* Update route-card to have relative positioning */
+.route-card {
+    background-color: #e6640e;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+    position: relative;
+}
+
+/* Dropdown Menu Styles */
+.menu-icon {
+    position: relative;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #4E5A607f;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    width: 180px;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: none;
+    margin-top: 10px;
+    overflow: hidden;
+    transform-origin: top left;
+    animation: dropdown-appear 0.2s ease-out;
+}
+
+@keyframes dropdown-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-item {
+    padding: 12px 15px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-item i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
 }

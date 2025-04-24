@@ -47,6 +47,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    if (typeof google !== 'undefined' && google.maps && google.maps.visualization) {
+        console.log('Google Maps Visualization library loaded');
+    } else {
+        console.warn('Google Maps Visualization library not loaded - heatmap functionality will not work');
+    }
+
     console.log('ORP Website initialized');
 });
 

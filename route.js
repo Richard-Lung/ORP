@@ -6,7 +6,7 @@ ORP.pages.route = {
     isSelectingPoints: false,
     routePoints: [],
     maxPoints: 5,
-    maxBoxSize: 1, // 1km
+    maxBoxSize: 10, // 1km
     markers: [],
 
     init: function() {
@@ -45,10 +45,62 @@ ORP.pages.route = {
     setupNavigation: function(menuIcon, userIcon, settingsIcon) {
         // For the mockup, we'll just add alert actions to the icons
         if (menuIcon) {
-            menuIcon.addEventListener('click', function () {
-                console.log('Menu icon clicked');
-                alert('Menu functionality will be implemented later');
-            });
+            // New dropdown menu handling code:
+menuIcon.addEventListener('click', function (event) {
+    event.stopPropagation(); // Prevent this click from immediately closing the dropdown
+    console.log('Menu icon clicked');
+    const dropdown = document.getElementById('navDropdown');
+    dropdown.classList.toggle('show');
+});
+
+// Add menu item event listeners
+const createRouteMenuItem = document.getElementById('createRouteMenuItem');
+const homeMenuItem = document.getElementById('homeMenuItem');
+const loginLogoutMenuItem = document.getElementById('loginLogoutMenuItem');
+const loginLogoutText = document.getElementById('loginLogoutText');
+
+// Set up login/logout text based on user state
+if (this.isUserLoggedIn()) {
+    loginLogoutText.textContent = 'Logout';
+} else {
+    loginLogoutText.textContent = 'Login';
+}
+
+// Create Route menu item
+if (createRouteMenuItem) {
+    createRouteMenuItem.addEventListener('click', function () {
+        console.log('Create Route menu item clicked');
+        window.location.href = 'route_creation.html';
+    });
+}
+
+// Home menu item
+if (homeMenuItem) {
+    homeMenuItem.addEventListener('click', function () {
+        console.log('Home menu item clicked');
+        window.location.href = 'home_page.html';
+    });
+}
+
+// Login/Logout menu item
+if (loginLogoutMenuItem) {
+    loginLogoutMenuItem.addEventListener('click', function () {
+        console.log('Login/Logout menu item clicked');
+        if (ORP.pages.route.isUserLoggedIn()) {
+            ORP.pages.route.logoutUser();
+        } else {
+            window.location.href = 'login_signin.html';
+        }
+    });
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function (event) {
+    const dropdown = document.getElementById('navDropdown');
+    if (dropdown && dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+    }
+});
         }
 
         if (userIcon) {
@@ -444,17 +496,22 @@ ORP.pages.route = {
     },
     
     // Create the final bounding box when generating the route
+    // In route.js - update the createFinalBoundingBox function
+
     createFinalBoundingBox: function() {
         // This creates the final bounding box that will be used for analysis and saved
         const latitudes = this.routePoints.map(p => p.lat);
         const longitudes = this.routePoints.map(p => p.lng);
         
+        // Add a small buffer to ensure all points are included
+        const BUFFER = 0.001; // About 100 meters
+        
         // Format the bounding box in the way elevation.js expects
-        return {
-            north: Math.max(...latitudes),
-            south: Math.min(...latitudes),
-            east: Math.max(...longitudes),
-            west: Math.min(...longitudes),
+        const boundingBox = {
+            north: Math.max(...latitudes) + BUFFER,
+            south: Math.min(...latitudes) - BUFFER,
+            east: Math.max(...longitudes) + BUFFER,
+            west: Math.min(...longitudes) - BUFFER,
             centerLat: (Math.max(...latitudes) + Math.min(...latitudes)) / 2,
             centerLng: (Math.max(...longitudes) + Math.min(...longitudes)) / 2,
             // Add width and height properties the elevation module might need
@@ -471,6 +528,15 @@ ORP.pages.route = {
                 (Math.max(...longitudes) + Math.min(...longitudes)) / 2
             ) * 1000
         };
+        
+        console.log('Created final bounding box:', boundingBox);
+        
+        // Save the points to ensure they're available for elevation analysis
+        if (ORP.utils.elevation) {
+            ORP.utils.elevation.selectedPoints = [...this.routePoints];
+        }
+        
+        return boundingBox;
     },
     
     setupRouteGenerationButton: function(generateRouteBtn) {
@@ -541,20 +607,27 @@ ORP.pages.route = {
         });
     },
     
-    // Add setup function for elevation analysis buttons
     setupElevationButtons: function(analyzeElevationBtn, clearVisualizationBtn, exportElevationBtn) {
+        const self = this;
+        
         if (analyzeElevationBtn) {
             analyzeElevationBtn.addEventListener('click', function () {
-                if (window.boundingBox) {
-                    // Use the FINAL bounding box created during route generation
+                if (window.boundingBox && self.routePoints && self.routePoints.length > 0) {
+                    console.log('Route points available for elevation analysis:', self.routePoints.length);
+                    
+                    // Make sure the elevation component has the selected points
                     if (ORP.utils.elevation) {
+                        // Set both the bounding box and selected points
                         ORP.utils.elevation.currentBoundingBox = window.boundingBox;
+                        ORP.utils.elevation.selectedPoints = [...self.routePoints];
+                        
+                        console.log('Processing elevation with bounding box and points...');
                         ORP.utils.elevation.processBoxWithElevation();
                     } else {
                         alert('Elevation utilities not loaded');
                     }
                 } else {
-                    alert('Please generate a route first to create a bounding box');
+                    alert('Please generate a route first to create a bounding box and points');
                 }
             });
         }
@@ -667,5 +740,16 @@ ORP.pages.route = {
         if (window.routeMap) {
             window.routeMap.addListener('click', window.handleMapClick);
         }
+    },
+
+    isUserLoggedIn: function() {
+        // For now just check if we have a user item in localStorage
+        return localStorage.getItem('orpUser') !== null;
+    },
+    
+    logoutUser: function() {
+        localStorage.removeItem('orpUser');
+        console.log('User logged out');
+        window.location.href = 'index.html'; // Redirect to landing page
     }
 };

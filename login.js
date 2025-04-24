@@ -20,8 +20,16 @@ ORP.pages.login = {
                 return;
             }
 
-            // This is a mockup login - redirect to home page
-            console.log('Login attempted with:', email);
+            // Store a simple user object in localStorage
+            // This is just a mockup - would be replaced with proper authentication
+            const user = {
+                email: email,
+                loggedInAt: new Date().toISOString()
+            };
+            localStorage.setItem('orpUser', JSON.stringify(user));
+
+            // Redirect to home page
+            console.log('Login successful for:', email);
             window.location.href = 'home_page.html';
         });
 

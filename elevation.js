@@ -6,7 +6,7 @@ ORP.utils.elevation = {
     selectedPoints: [],
     MAX_POINTS: 5,
     MAX_BOX_KM: 10,
-    elevationRectangles: [],
+    heatmap: null, // New property to store the heatmap instance
     boundingBoxRectangle: null,
     markerColors: [
         "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
@@ -166,14 +166,14 @@ ORP.utils.elevation = {
         // Save as current bounding box
         this.currentBoundingBox = bounds;
 
-        // Create the rectangle
+        // Create the rectangle with no fill, only border
         this.boundingBoxRectangle = new google.maps.Rectangle({
             bounds: bounds,
             strokeColor: '#003049',
             strokeOpacity: 0.8,
             strokeWeight: 2,
             fillColor: '#003049',
-            fillOpacity: 0.15,
+            fillOpacity: 0, // Set to 0 to have no fill, only border
             map: window.routeMap
         });
 
@@ -184,45 +184,24 @@ ORP.utils.elevation = {
     },
 
     // Function to generate a grid of points within a bounding box
-    generateGrid: function (boundingBox, cellSize = 20) {
-        // The cell size is in meters
+    generateGrid: function (boundingBox) {
+        // Get the bounds of the current bounding box
+        const bounds = boundingBox;
+        // Use a smaller step size to get more detailed elevation data
+        const step = 0.00009; // ~10 meters
         const grid = [];
 
-        // Calculate the number of points needed in each direction
-        // Approximate conversion: 1 degree of latitude = 111,111 meters
-        const latDegPerMeter = 1 / 111111;
-        const centerLat = (boundingBox.north + boundingBox.south) / 2;
-        const lngDegPerMeter = 1 / (111111 * Math.cos(centerLat * Math.PI / 180));
-
-        // Calculate step sizes in lat/lng for each grid cell
-        const latStep = cellSize * latDegPerMeter;
-        const lngStep = cellSize * lngDegPerMeter;
-
-        // Calculate number of points in each direction
-        const latPoints = Math.ceil((boundingBox.north - boundingBox.south) / latStep) + 1;
-        const lngPoints = Math.ceil((boundingBox.east - boundingBox.west) / lngStep) + 1;
-
-        console.log(`Generating grid with ${latPoints} x ${lngPoints} points (${latPoints * lngPoints} total)`);
-
-        // Generate the grid points
-        for (let latIndex = 0; latIndex < latPoints; latIndex++) {
-            const row = [];
-            for (let lngIndex = 0; lngIndex < lngPoints; lngIndex++) {
-                const lat = boundingBox.south + (latIndex * latStep);
-                const lng = boundingBox.west + (lngIndex * lngStep);
-
-                row.push({
-                    lat: lat,
-                    lng: lng,
-                    latIndex: latIndex,
-                    lngIndex: lngIndex,
-                    elevation: null  // Will be filled later
-                });
+        // Generate a uniform grid covering the entire bounding box
+        for (let lat = bounds.south; lat <= bounds.north; lat += step) {
+            for (let lng = bounds.west; lng <= bounds.east; lng += step) {
+                grid.push({ lat, lng });
             }
-            grid.push(row);
         }
 
-        console.log(`Grid generated with ${grid.length} rows and ${grid[0].length} columns`);
+        // Add the selected points to ensure they're included
+        grid.push(...this.selectedPoints);
+
+        console.log(`Generated grid with ${grid.length} points`);
         return grid;
     },
 
@@ -233,67 +212,57 @@ ORP.utils.elevation = {
             return Promise.reject('Map not initialized');
         }
 
-        // Create a flat array of all points
-        const flatPoints = [];
-        for (let row of grid) {
-            for (let point of row) {
-                flatPoints.push(point);
-            }
-        }
-
-        console.log(`Preparing to fetch elevation data for ${flatPoints.length} points`);
+        // Update status
+        this.updateElevationStatus(`Fetching elevation data for ${grid.length} points...`);
 
         // Create an elevation service
         const elevationService = new google.maps.ElevationService();
-
+        
         // Break the points into batches of 512 (API limit per request)
         const batchSize = 512;
         const batches = [];
+        const elevationData = [];
 
-        for (let i = 0; i < flatPoints.length; i += batchSize) {
-            batches.push(flatPoints.slice(i, i + batchSize));
+        for (let i = 0; i < grid.length; i += batchSize) {
+            batches.push(grid.slice(i, i + batchSize));
         }
 
         console.log(`Split into ${batches.length} batches for API requests`);
 
-        // Create a status indicator
-        this.updateElevationStatus(`Fetching elevation data (0/${batches.length} batches)...`);
-
         // Process each batch sequentially to avoid rate limiting
-        return this.processBatchesSequentially(batches, elevationService).then(() => {
-            console.log('All elevation data fetched successfully');
-            this.updateElevationStatus(`Elevation data complete for ${flatPoints.length} points`);
-            return grid;
-        }).catch(error => {
-            console.error('Error fetching elevation data:', error);
-            this.updateElevationStatus('Error fetching elevation data');
-            return Promise.reject(error);
-        });
+        return this.processBatchesSequentially(batches, elevationService, elevationData)
+            .then((results) => {
+                console.log('All elevation data fetched successfully');
+                this.updateElevationStatus(`Elevation data complete for ${results.length} points`);
+                return results;
+            })
+            .catch(error => {
+                console.error('Error fetching elevation data:', error);
+                this.updateElevationStatus('Error fetching elevation data');
+                return Promise.reject(error);
+            });
     },
 
     // Helper function to process batches sequentially
-    processBatchesSequentially: function (batches, elevationService) {
+    processBatchesSequentially: function (batches, elevationService, elevationData) {
         let completedBatches = 0;
         const self = this;
 
         // Process one batch
         function processBatch(batchIndex) {
             if (batchIndex >= batches.length) {
-                return Promise.resolve(); // All batches processed
+                return Promise.resolve(elevationData); // All batches processed
             }
 
             const batch = batches[batchIndex];
-            const locations = batch.map(point => ({ lat: point.lat, lng: point.lng }));
-
+            
             return new Promise((resolve, reject) => {
                 elevationService.getElevationForLocations(
-                    { locations: locations },
+                    { locations: batch },
                     (results, status) => {
                         if (status === google.maps.ElevationStatus.OK && results) {
-                            // Update the elevation data for each point
-                            for (let i = 0; i < results.length; i++) {
-                                batch[i].elevation = results[i].elevation;
-                            }
+                            // Add results to elevation data
+                            elevationData.push(...results);
 
                             completedBatches++;
                             self.updateElevationStatus(`Fetching elevation data (${completedBatches}/${batches.length} batches)...`);
@@ -324,89 +293,92 @@ ORP.utils.elevation = {
         }
     },
 
-    // Function to visualize the elevation grid on the map
-    visualizeElevationGrid: function (grid) {
-        if (!window.routeMap || !grid || grid.length === 0) {
-            console.error('Map not initialized or grid is empty');
+    // Function to visualize the elevation data using heatmap
+    // Function to visualize the elevation data using heatmap
+    visualizeElevationWithHeatmap: function (elevationData) {
+        if (!window.routeMap || !elevationData || elevationData.length === 0) {
+            console.error('Map not initialized or elevation data is empty');
             return;
         }
 
-        // Clear previous markers if any
+        // Clear previous visualization
         this.clearVisualization();
 
-        // Find min and max elevation to create a color scale
-        let minElevation = Infinity;
-        let maxElevation = -Infinity;
+        // Find min and max elevation values
+        const elevations = elevationData.map(point => point.elevation);
+        const minElevation = Math.min(...elevations);
+        const maxElevation = Math.max(...elevations);
+        const elevationRange = maxElevation - minElevation;
+        
+        console.log(`Elevation range: ${minElevation.toFixed(1)}m to ${maxElevation.toFixed(1)}m (range: ${elevationRange.toFixed(1)}m)`);
 
-        for (let row of grid) {
-            for (let point of row) {
-                if (point.elevation !== null) {
-                    minElevation = Math.min(minElevation, point.elevation);
-                    maxElevation = Math.max(maxElevation, point.elevation);
-                }
-            }
+        // Sample the data to reduce density - take every nth point
+        // This helps prevent the heatmap from becoming too dense and overwhelming
+        const samplingRate = 4; // Take every 4th point
+        const sampledData = [];
+        
+        for (let i = 0; i < elevationData.length; i += samplingRate) {
+            sampledData.push(elevationData[i]);
         }
+        
+        console.log(`Sampled data from ${elevationData.length} to ${sampledData.length} points`);
 
-        console.log(`Elevation range: ${minElevation.toFixed(2)}m to ${maxElevation.toFixed(2)}m`);
+        // Normalize and invert the elevation values (higher elevation = blue, lower = red)
+        // This is counter-intuitive but prevents red from dominating the visualization
+        const weightedData = sampledData.map(point => {
+            // Normalize elevation to 0-1 range and invert (1 - normalized value)
+            const normalizedElevation = 1 - ((point.elevation - minElevation) / elevationRange);
+            
+            return {
+                location: new google.maps.LatLng(point.location.lat(), point.location.lng()),
+                weight: normalizedElevation
+            };
+        });
 
-        // Create a heatmap representation using rectangles
-        this.elevationRectangles = [];
+        // Create the heatmap layer with adjusted settings
+        this.heatmap = new google.maps.visualization.HeatmapLayer({
+            data: weightedData,
+            radius: 20, // Larger radius to blend points better
+            opacity: 0.7, // Reduced opacity
+            dissipating: true,
+            maxIntensity: 0.8, // Reduced intensity to prevent color saturation
+            map: window.routeMap
+        });
 
-        for (let rowIndex = 0; rowIndex < grid.length - 1; rowIndex++) {
-            for (let colIndex = 0; colIndex < grid[rowIndex].length - 1; colIndex++) {
-                const point = grid[rowIndex][colIndex];
+        // Set a color gradient with red for low elevations and blue for high elevations
+        this.heatmap.set('gradient', [
+            'rgba(255, 0, 0, 0)',   // Red (transparent for lowest values)
+            'rgba(255, 0, 0, 1)',   // Red
+            'rgba(255, 128, 0, 1)', // Orange
+            'rgba(255, 255, 0, 1)', // Yellow
+            'rgba(0, 255, 0, 1)',   // Green
+            'rgba(0, 255, 255, 1)', // Cyan
+            'rgba(0, 0, 255, 1)'    // Blue (highest elevation)
+        ]);
 
-                // Skip if elevation data is missing
-                if (point.elevation === null) continue;
-
-                // Calculate the bounds of this cell
-                const bounds = {
-                    north: Math.max(point.lat, grid[rowIndex + 1][colIndex].lat),
-                    south: Math.min(point.lat, grid[rowIndex + 1][colIndex].lat),
-                    east: Math.max(point.lng, grid[rowIndex][colIndex + 1].lng),
-                    west: Math.min(point.lng, grid[rowIndex][colIndex + 1].lng)
-                };
-
-                // Calculate color based on elevation (green to red gradient)
-                const normalized = (point.elevation - minElevation) / (maxElevation - minElevation);
-                const hue = (1 - normalized) * 120; // 120 = green, 0 = red
-                const fillColor = `hsl(${hue}, 80%, 60%)`;
-
-                // Create a rectangle for this cell
-                const rectangle = new google.maps.Rectangle({
-                    bounds: bounds,
-                    strokeWeight: 0,
-                    fillColor: fillColor,
-                    fillOpacity: 0.7,
-                    map: window.routeMap
-                });
-
-                // Add click event to show elevation
-                rectangle.addListener('click', function () {
-                    const infoWindow = new google.maps.InfoWindow({
-                        content: `<div style="padding:5px">Elevation: ${point.elevation.toFixed(2)}m</div>`
-                    });
-
-                    infoWindow.setPosition({
-                        lat: (bounds.north + bounds.south) / 2,
-                        lng: (bounds.east + bounds.west) / 2
-                    });
-
-                    infoWindow.open(window.routeMap);
-                });
-
-                this.elevationRectangles.push(rectangle);
-            }
+        console.log('Heatmap visualization created with', sampledData.length, 'points');
+        
+        // Store the full elevation data for later use (for export)
+        window.elevationGrid = elevationData;
+        
+        // Add a legend to the map - inverted to match our visualization
+        this.addElevationLegend(minElevation, maxElevation, true);
+        
+        // Make sure the bounding box is still visible as a border only
+        if (this.boundingBoxRectangle) {
+            // Update the bounding box to have no fill, only border
+            this.boundingBoxRectangle.setOptions({
+                fillOpacity: 0,  // No fill
+                strokeColor: '#003049',
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                map: window.routeMap
+            });
         }
-
-        console.log(`Created ${this.elevationRectangles.length} elevation visualization rectangles`);
-
-        // Add a legend to the map
-        this.addElevationLegend(minElevation, maxElevation);
     },
 
     // Function to add a color legend to the map
-    addElevationLegend: function (minElevation, maxElevation) {
+    addElevationLegend: function (minElevation, maxElevation, inverted = false) {
         // Create the legend control div
         const legendDiv = document.createElement('div');
         legendDiv.className = 'elevation-legend';
@@ -423,11 +395,19 @@ ORP.utils.elevation = {
         title.style.marginBottom = '5px';
         legendDiv.appendChild(title);
 
-        // Create the gradient bar
+        // Create the gradient bar - direction depends on if we're using inverted colors
         const gradient = document.createElement('div');
         gradient.style.width = '200px';
         gradient.style.height = '20px';
-        gradient.style.backgroundImage = 'linear-gradient(to right, hsl(120, 80%, 60%), hsl(60, 80%, 60%), hsl(0, 80%, 60%))';
+        
+        if (inverted) {
+            // Red (low) to Blue (high)
+            gradient.style.backgroundImage = 'linear-gradient(to right, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0000ff)';
+        } else {
+            // Blue (low) to Red (high)
+            gradient.style.backgroundImage = 'linear-gradient(to right, #0000ff, #00ffff, #00ff00, #ffff00, #ff8000, #ff0000)';
+        }
+        
         legendDiv.appendChild(gradient);
 
         // Add min and max labels
@@ -444,11 +424,9 @@ ORP.utils.elevation = {
 
     // Function to clear all visualization elements
     clearVisualization: function () {
-        if (this.elevationRectangles && this.elevationRectangles.length) {
-            for (let rectangle of this.elevationRectangles) {
-                rectangle.setMap(null);
-            }
-            this.elevationRectangles = [];
+        if (this.heatmap) {
+            this.heatmap.setMap(null);
+            this.heatmap = null;
         }
 
         // Clear the elevation legend if it exists
@@ -473,15 +451,32 @@ ORP.utils.elevation = {
     },
 
     // Main function to process the bounding box with elevation data
+    // In elevation.js - update the processBoxWithElevation function
+
     processBoxWithElevation: function () {
-        // Make sure we have a bounding box
-        if (!this.currentBoundingBox || this.selectedPoints.length < 1) {
-            alert('Please select at least one point on the map first');
+        // Check if we have necessary data
+        if (!this.currentBoundingBox) {
+            alert('No bounding box available. Please generate a route first.');
             return;
+        }
+        
+        // Ensure we have at least one point
+        if (!this.selectedPoints || this.selectedPoints.length < 1) {
+            console.warn('No selected points available. Using route points if available.');
+            
+            // Try to get points from route if available
+            if (ORP.pages.route && ORP.pages.route.routePoints && ORP.pages.route.routePoints.length > 0) {
+                this.selectedPoints = [...ORP.pages.route.routePoints];
+                console.log('Using route points for elevation analysis:', this.selectedPoints.length);
+            } else {
+                alert('Please select at least one point on the map first');
+                return;
+            }
         }
 
         // Show a loading indicator
         this.updateElevationStatus('Generating grid...');
+        console.log('Processing elevation for bounding box:', this.currentBoundingBox);
 
         // Generate the grid
         const grid = this.generateGrid(this.currentBoundingBox);
@@ -489,13 +484,10 @@ ORP.utils.elevation = {
         // Fetch elevation data
         this.updateElevationStatus('Fetching elevation data...');
 
-        this.fetchElevationData(grid).then(gridWithElevation => {
-            // Visualize the elevation data
+        this.fetchElevationData(grid).then(elevationData => {
+            // Visualize the elevation data with heatmap
             this.updateElevationStatus('Visualizing elevation data...');
-            this.visualizeElevationGrid(gridWithElevation);
-
-            // Store the grid data for further processing
-            window.elevationGrid = gridWithElevation;
+            this.visualizeElevationWithHeatmap(elevationData);
 
             this.updateElevationStatus('Elevation data processing complete');
         }).catch(error => {
@@ -503,102 +495,89 @@ ORP.utils.elevation = {
         });
     },
 
-    // Updated exportElevationData function for elevation.js
-exportElevationData: function() {
-    if (!window.elevationGrid || window.elevationGrid.length === 0) {
-        alert('No elevation data available. Please analyze elevation data first.');
-        return;
-    }
-    
-    // Get route points if available
-    const routePoints = ORP.pages.route ? ORP.pages.route.routePoints : [];
-    const hasRoutePoints = routePoints && routePoints.length > 0;
-    
-    // Create CSV content
-    let csvContent = 'lat,lng,elevation,point_type\n';
-    
-    // FIRST: Add all the important route points at the beginning of the CSV
-    if (hasRoutePoints) {
-        for (let i = 0; i < routePoints.length; i++) {
-            const routePoint = routePoints[i];
-            let pointType = 'waypoint';
-            
-            if (i === 0) {
-                pointType = 'start';
-            } else if (i === routePoints.length - 1) {
-                pointType = 'end';
+    // Export elevation data to CSV
+    exportElevationData: function() {
+        if (!window.elevationGrid || window.elevationGrid.length === 0) {
+            alert('No elevation data available. Please analyze elevation data first.');
+            return;
+        }
+        
+        // Get route points if available
+        const routePoints = ORP.pages.route ? ORP.pages.route.routePoints : [];
+        const hasRoutePoints = routePoints && routePoints.length > 0;
+        
+        // Create CSV content
+        let csvContent = 'lat,lng,elevation,point_type\n';
+        
+        // Add all the important route points at the beginning of the CSV
+        if (hasRoutePoints) {
+            for (let i = 0; i < routePoints.length; i++) {
+                const routePoint = routePoints[i];
+                let pointType = 'waypoint';
+                
+                if (i === 0) {
+                    pointType = 'start';
+                } else if (i === routePoints.length - 1) {
+                    pointType = 'end';
+                }
+                
+                // Find elevation for this point from the elevation data
+                let foundElevation = null;
+                let closestDistance = Infinity;
+                
+                for (let point of window.elevationGrid) {
+                    const latDiff = Math.abs(point.location.lat() - routePoint.lat);
+                    const lngDiff = Math.abs(point.location.lng() - routePoint.lng);
+                    const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
+                    
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        foundElevation = point.elevation;
+                    }
+                }
+                
+                // If we couldn't find elevation, use a reasonable default
+                if (foundElevation === null) {
+                    foundElevation = 0;
+                }
+                
+                // Add to CSV
+                csvContent += `${routePoint.lat},${routePoint.lng},${foundElevation},${pointType}\n`;
             }
+        }
+        
+        // Add all elevation points
+        for (let point of window.elevationGrid) {
+            // Skip points that are very close to route points to avoid duplication
+            let tooClose = false;
             
-            // Find elevation for this point
-            let foundElevation = null;
-            let closestDistance = Infinity;
-            
-            // Try to find this point in the elevation grid
-            for (let row of window.elevationGrid) {
-                for (let gridPoint of row) {
-                    if (gridPoint.elevation !== null) {
-                        // Calculate distance between points
-                        const latDiff = Math.abs(gridPoint.lat - routePoint.lat);
-                        const lngDiff = Math.abs(gridPoint.lng - routePoint.lng);
-                        const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
-                        
-                        if (distance < closestDistance) {
-                            closestDistance = distance;
-                            foundElevation = gridPoint.elevation;
-                        }
+            if (hasRoutePoints) {
+                for (let routePoint of routePoints) {
+                    const latDiff = Math.abs(point.location.lat() - routePoint.lat);
+                    const lngDiff = Math.abs(point.location.lng() - routePoint.lng);
+                    
+                    if (latDiff < 0.00001 && lngDiff < 0.00001) {
+                        tooClose = true;
+                        break;
                     }
                 }
             }
             
-            // If we couldn't find elevation, use a reasonable default
-            if (foundElevation === null) {
-                foundElevation = 0;
-            }
-            
-            // Add to CSV
-            csvContent += `${routePoint.lat},${routePoint.lng},${foundElevation},${pointType}\n`;
-            
-            console.log(`Added route point: ${pointType} at ${routePoint.lat}, ${routePoint.lng}`);
-        }
-    }
-    
-    // SECOND: Add all grid points (excluding points very close to route points)
-    for (let row of window.elevationGrid) {
-        for (let gridPoint of row) {
-            if (gridPoint.elevation !== null) {
-                // Skip points that are too close to route points to avoid duplication
-                let tooClose = false;
-                
-                if (hasRoutePoints) {
-                    for (let routePoint of routePoints) {
-                        const latDiff = Math.abs(gridPoint.lat - routePoint.lat);
-                        const lngDiff = Math.abs(gridPoint.lng - routePoint.lng);
-                        
-                        // Skip if the point is very close to a route point (we already added these)
-                        if (latDiff < 0.00001 && lngDiff < 0.00001) {
-                            tooClose = true;
-                            break;
-                        }
-                    }
-                }
-                
-                if (!tooClose) {
-                    csvContent += `${gridPoint.lat},${gridPoint.lng},${gridPoint.elevation},grid\n`;
-                }
+            if (!tooClose) {
+                csvContent += `${point.location.lat()},${point.location.lng()},${point.elevation},grid\n`;
             }
         }
+        
+        // Create and trigger download
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'elevation_data.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        console.log('Elevation data exported to CSV with explicit route points labeled');
     }
-    
-    // Create and trigger download
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'elevation_data.csv';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    console.log('Elevation data exported to CSV with explicit route points labeled');
-}
 };
